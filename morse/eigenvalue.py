@@ -4,13 +4,27 @@ import numpy as np
 import sys
 
 class Eigenvalue(object):
-    """ Class to represent an Eigenvalue of the Laplace's tidal equation """
+    """ Class to represent an Eigenvalue(m,k) of the Laplace's tidal equation.
+
+    Attributes:
+        m (int): Azimuthal order.
+        k (int): Ordering index (Lee & Saio 97).
+        eta (np.array): Spin factors.
+        lamb (np.array): Eigenvalue(m,k) at each spin factor in eta.
+
+    """
 
     def __init__(self,m,k):
-        """ Initialise an instance of Eigenvalue """
+        """ Initialises an instance of Eigenvalue.
+
+        Args:
+            m (int): Azimuthal order.
+            k (int): Ordering index (Lee & Saio 97).
+
+        """
         self.m = m
         self.k = k
-        # Load the tabulated values of Eigenvalue
+        # Loading the tabulated values of Eigenvalue
         if self.k + abs(self.m) > 0:
             try:
                 data = np.genfromtxt(f'/home/schristophe/morse/morse/lambda/lambda_m{self.m}.txt')

@@ -4,10 +4,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class Pattern(object):
-    """ """
+    """ Class to represent a period spacing pattern.
+
+        Attributes:
+
+    """
 
     def __init__(self,spectrum,m,k,nurot,buoyancy_radius,folded,tolerance):
-        """ Initialise an instance of Pattern """
+        """ Initialises an instance of Pattern """
         self.m = m
         self.k = k
         self.nurot = nurot

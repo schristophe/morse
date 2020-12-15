@@ -10,15 +10,44 @@ from .auxil import *
 from .eigenvalue import *
 
 class Spectrum(object):
-    """ Class to represent the list of peak frequenctes extracted
-        from the oscillation spectrum of a star """
+    """ Class to represent frequency data either extracted from the
+    oscillation spectrum of a star or generated using the equation of the
+    traditional approximation of rotation in its asymptotic formulation.
+
+    Attributes:
+        path (str): Path to the file containing the frequency data.
+        freqs (np.array): Frequencies (in µHz).
+        periods (np.array): Periods (in d).
+        errs (np.array): Errors on frequencies (in µHz).
+        amps (np.array): Amplitudes.
+        m (int): Azimutal order.
+        k (int): Ordering index (Lee & Saio 97).
+        nurot (float): Rotation frequency (in µHz).
+        buoyancy_radius (float): Buoyancy radius (in s).
+        offset (float): Offset.
+        n (np.array): Radial orders.
+        periods_co (np.array): Periods in the co-rotating frame (in d).
+
+    """
 
     def __init__(self):
-        """ Initialise an instance of Spectrum """
+        """ Initialises an instance of Spectrum """
 
     def load(self,path='test/kic8375138_test.freq', colfreqs=0, colerrs=-1,
         ufreqs='u.microHertz', colamps=-1):
-        """ Load frequency data from a file. """
+        """ Loads frequency data from a file.
+
+        The file must contain the mode frequencies in µHz at the very least.
+        Peak amplitudes and errors on frequencies may also be loaded. By
+        default, only frequencies are loaded.
+
+        Args:
+            path (str): Path to the file containing the frequency data.
+            colfreqs (int): Column number of frequencies.
+            colerrs (int): Column number of frequency errors.
+            colamps (int): Column number of mode amplitudes.
+
+        """
         self.path = path
         data = np.genfromtxt(self.path)
         self.freqs = data[:,colfreqs]  #* ufreqs
@@ -29,8 +58,19 @@ class Spectrum(object):
             self.amps = data[:,colamps]
 
     def generate(self,m,k,nurot,buoyancy_radius,offset=0.0,nmin=1,nmax=90):
-        """ Generate synthetic frequency data using the asymptotic formulation
-            of the traditional approximation of rotation (TAR). """
+        """ Generates synthetic frequency data using the asymptotic formulation
+        of the traditional approximation of rotation (TAR).
+
+        Args:
+            m (int): Azimuthal order.
+            k (int): Ordering index (Lee & Saio 97).
+            nurot (float): Rotation frequency (in µHz).
+            buoyancy_radius (float): Buoyancy radius (in s).
+            offset (float): Offset.
+            nmin (int): Minimum radial order.
+            nmax (int): Maximum radial order.
+
+        """
         self.m = m
         self.k = k
         self.nurot = nurot
@@ -61,11 +101,11 @@ class Spectrum(object):
                 sys.exit('Radial modes are not handled in this version of the code.')
         self.periods_co = periods_co
         self.periods = co2in(periods_co,m,nurot)
-        self.freqs = factor / self.periods  # in muHz
+        self.freqs = factor / self.periods  # in µHz
 
 
     def plot(self):
-        """ Plot the oscillation spectrum """
+        """ Plots the oscillation spectrum. """
         plt.figure()
         plt.vlines(self.freqs,0,self.amps,lw=1)
         plt.xlabel('Frequency ('+str(self.ufreqs)+')')
@@ -76,7 +116,26 @@ class Spectrum(object):
         """ """
 
     def filter(self,ampmin=0,ampmax=np.inf,freqmin=0,freqmax=np.inf,periodmin=0,periodmax=np.inf,nmin=0,nmax=np.inf,boolean=None):
-        """ Filter the spectrum according to the period/frequency/amplitude of the modes or arbitrarily. """
+        """ Filters the spectrum according to the period/frequency/amplitude of
+        the modes or in an arbitrary way.
+
+        Only modes that satify all conditions are kept (logical and).
+
+        Args:
+            ampmin (float): Minimum amplitude.
+            ampmax (float): Maximum amplitude.
+            freqmin (float): Minimum mode frequency.
+            freqmax (float): Maximum mode frequency.
+            periodmin (float): Minimum mode period.
+            periodmax (float): Maximum mode period.
+            nmin (int): Minimum radial order.
+            nmax (int): Maximum radial order.
+            boolean (np.array): Custom mask.
+
+        Returns:
+            Spectrum: The filtered spectrum.
+
+        """
         # Make the filter
         if boolean is not None:
             conditions = boolean
@@ -88,7 +147,7 @@ class Spectrum(object):
             conditions = np.vstack((conditions,np.array([self.n >= nmin, self.n <= nmax])))
         conditions = np.vstack((conditions,np.array([self.freqs >= freqmin, self.freqs <= freqmax, self.periods >= periodmin, self.periods <= periodmax])))
         filter = np.logical_and.reduce(conditions)
-        # Create a new Spectrum object with modes that pass the filter
+        # Creating a new Spectrum object with modes that pass the filter
         filtered_spectrum = deepcopy(self)
         filtered_spectrum.periods = filtered_spectrum.periods[filter]
         filtered_spectrum.freqs = filtered_spectrum.freqs[filter]
@@ -107,16 +166,25 @@ class Spectrum(object):
 
 
 def find_zeros(x,y,nb_iterations):
-    """ Find the zeros of a function by the secant method. Only works for a
-        strictly monotonic function. """
-    # Find an upper and a lower bound of the zero
+    """ Finds the zero of a function y(x) by the secant method. Only works for a
+    strictly monotonic function.
+
+    Args:
+        x (np.array): Arguments.
+        y (np.array): Functions values.
+        nb_iterations (int): Number of iterations.
+
+    Returns:
+        float: The zero.
+    """
+    # Finding an upper and a lower bound of the zero
     i_min = np.argmin(abs(y))
     x0 = x[i_min]
     if y[i_min] > 0:
         x1 = x[i_min + 1]
     else:
         x1 = x[i_min - 1]
-    # Interpolate the function
+    # Interpolating the function
     g = interp1d(x,y,kind='quadratic')
     # Root-finding algorithm (secant method)
     for i in np.arange(nb_iterations):

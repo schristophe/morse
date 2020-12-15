@@ -8,27 +8,61 @@ from .eigenvalue import*
 from .auxil import *
 
 
-# nurot est en muHz quand on fait appel aux fonctions ce qui pose problème ensuite dans le calcul du diagramme échelle
-
 class EchelleDiagram(object):
-    """ """
+    """ Class to represent an echelle diagram.
+
+    Attributes:
+        spectrum (Spectrum): Frequency data.
+        m (int): Azimuthal order.
+        k (int): Ordering index (Lee & Saio 97).
+        nurot (float): Rotation frequency (in µHz).
+        buoyancy_radius (float): Buoyancy radius (in s).
+        folded (bool):
+            If True, it is assumed that the spectrum is folded in the inertial
+            frame.
+        index_keep (np.array):
+            Indices of modes in spectrum that were not discarded in the change
+            of reference frame.
+        stretched_periods_mod (np.array):
+            Remainder of the floor division of the stretched periods by the
+            buoyancy radius (i.e. modulo).
+
+    """
 
     def __init__(self,spectrum,m,k,nurot,buoyancy_radius,folded=False):
-        """ Initialise an instance of EchelleDiagram """
+        """ Initialises an instance of EchelleDiagram.
+
+        The periods are stretched using the parameters (m, k, nurot).
+
+        Args:
+            spectrum (Spectrum): Frequency data.
+            m (int): Azimuthal order.
+            k (int): Ordering index (Lee & Saio 97).
+            nurot (float): Rotation frequency (in µHz).
+            buoyancy_radius (float): Buoyancy radius (in s).
+            folded (bool):
+                If True, it is assumed that the spectrum is folded in the
+                inertial frame.
+
+        """
         self.spectrum = spectrum
         self.m = m
         self.k = k
         self.nurot = nurot
         self.buoyancy_radius = buoyancy_radius
         self.folded = folded
-        # Chargement de la fonction lambda associee
         eigenvalue = Eigenvalue(m, k)
         periods_co, self.index_keep = in2co(spectrum.periods, m, k, nurot / factor, folded, ed=True)   # moving to the co-rotating frame of reference
         stretched_periods = stretch(m, k, periods_co, eigenvalue, nurot / factor)
         self.stretched_periods_mod = np.mod(stretched_periods, buoyancy_radius / 86400)
 
     def plot(self, save=False):
-        """ Plot the echelle diagram. """
+        """ Plots the echelle diagram.
+
+        Args:
+            save (bool): If True, saves the figure to a png file.
+
+        """
         plt.figure()
         if hasattr(self.spectrum,'amps'):
             max_amp = max(self.spectrum.amps[self.index_keep])

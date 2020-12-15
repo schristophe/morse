@@ -3,12 +3,24 @@ morse
 
 .. toctree::
    :maxdepth: 2
+   :caption: Getting Started
 
+   getting_started/core_principle
+   getting_started/installation
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorials
 
-Indices and tables
-==================
+   tutorials/kic7694191_analysis
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. toctree::
+   :maxdepth: 2
+   :caption: API
+
+   api/echellediagram
+   api/eigenvalue
+   api/idmap
+   api/pattern
+   api/spectrum
+   api/auxil

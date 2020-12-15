@@ -11,10 +11,68 @@ from .eigenvalue import *
 from .spectrum import *
 
 class IDMap(object):
-    """ """
+    """ Class to represent a DFT map.
+
+    Attributes:
+        spectrum (Spectrum): Frequency data.
+        m (int): Azimuthal order.
+        k (int): Ordering index (Lee & Saio 97).
+        nurot_vect (np.array): Rotation frequencies tested (in µHz).
+        f0_vect (np.array): Frequencies at which the DFT is evaluated (in µHz).
+        folded (bool):
+            If True, it is assumed that the spectrum is folded in the
+            inertial frame.
+        eigenvalue (Eigenvalue):
+            Eigenvalue of Laplace's tidal equation corresponding to (m,k).
+        resolution (np.array):
+        dft_map (np.array):
+        psd_max (float): Maximum of Power Spectral Density (PSD) in dft_map.
+        nurot (float):
+            Rotation frequency corresponding to the maximum of PSD in dft_map
+            (in µHz).
+        buoyancy_radius (float):
+            Buoyancy radius corresponding to the maximum of PSD in dft_map
+            (in s).
+        psd_threshold (float):
+            Detection threshold.
+        flag_detection (bool):
+            True if a period spacing pattern has been detected (psd_max >
+            psd_threshold).
+        echelle_diagram (EchelleDiagram):
+            Echelle diagram made using the parameters (nurot, buoyancy_radius)
+            that maximise the PSD.
+        tolerance (float):
+            Maximum relative period difference tolerated to associate an
+            observed mode to one of the TAR model.
+        offset (float): Offset.
+        err_periods_mc (float):
+            Mean period difference between a TAR model and observed
+            modes.
+        results_mc (np.array):
+            Results of the MC simulation. A line contains nurot,
+            buoyancy_radius, psd_max and flag_detection for a draw of the
+            perturbed spectrum.
+        err_nurot (float):
+            Standard deviation of the perturbed rotation frequencies (in µHz).
+        err_buoyancy_radius (float):
+            Standard deviation of the perturbed buoyancy radii (in s).
+    """
 
     def __init__(self, spectrum, m, k, nurot_vect, f0_vect, folded=False):
-        """ Initialise an instance of IDMap """
+        """ Initialises an instance of IDMap.
+
+        Args:
+            spectrum (Spectrum object): Frequency data.
+            m (int): Azimuthal order.
+            k (int): Ordering index (Lee & Saio 97).
+            nurot_vect (np.array): Rotation frequencies tested (in µHz)
+            f0_vect (np.array):
+                Frequencies at which the DFT is evaluated (in µHz).
+            folded (bool):
+                If True, it is assumed that the spectrum is folded in the
+                inertial frame.
+
+        """
         self.spectrum = spectrum
         self.m = m
         self.k = k
@@ -22,13 +80,13 @@ class IDMap(object):
         self.f0_vect = f0_vect
         self.folded = folded
         self.eigenvalue = Eigenvalue(m,k)
-        # Initialise the ID map and the array that will store the resolution
+        # Initialising the ID map and the array that will store the resolution
         # of each DFT spectrum
         resolution = np.nan * np.ones(len(nurot_vect))
         dft_map = np.nan * np.ones((len(nurot_vect),len(f0_vect)))
-        # For each value of nurot, stretch the oscillation spectrum and
-        # compute its DFT
-        nurot_vect = nurot_vect / factor    # convert to c/d for computations
+        # For each value of nurot, stretches the oscillation spectrum and
+        # computes its DFT
+        nurot_vect = nurot_vect / factor    # converting to c/d for computations
         for i in np.arange(len(nurot_vect)):
             progress_bar(i+1, len(nurot_vect), 'Computing the ID map...')
             nurot = nurot_vect[i]
@@ -45,7 +103,7 @@ class IDMap(object):
         imax_nurot, imax_f0 = np.argwhere(self.dft_map == self.psd_max)[0]
         self.nurot = self.nurot_vect[imax_nurot]
         self.buoyancy_radius = 1e6 / f0_vect[imax_f0] # we want the buoyancy radius (dim of a time)
-        # Compute the detection threshold
+        # Computing the detection threshold
         # (above which we consider we have detected a period spacing pattern)
         nb_bins = np.ceil((self.f0_vect.max()-self.f0_vect.min())/self.resolution[imax_nurot])
         self.psd_threshold = - np.log(1 - 0.99**(1/nb_bins))
@@ -55,15 +113,31 @@ class IDMap(object):
             self.flag_detection = False
 
     def get_echelle_diagram(self):
-        """ Compute the echelle diagram using the parameters that maximise the PSD in the DFT map. """
+        """ Computes the echelle diagram using the parameters that maximise the
+        PSD in the DFT map.
+
+        """
         self.echelle_diagram = EchelleDiagram(self.spectrum,self.m,self.k,self.nurot,self.buoyancy_radius,folded=self.folded)
 
     def get_pattern(self,tolerance):
         """ """
 
-    def get_param_uncertainties(self, ndraws=500, propagate=None, tolerance=5e-3):
-        """ Estimate the uncertainty on the rotation frequency and buoyancy radius using Monte-Carlo simulations. """
-        if propagate == 'err' and hasattr(self.spectrum,'errs'):        # propagate errors on mode periods
+    def get_param_uncertainties(self, ndraws=500, propagate=False, tolerance=5e-3):
+        """ Estimates the uncertainty on the rotation frequency and buoyancy
+        radius using a Monte-Carlo simulation.
+
+        Args:
+            ndraws (int): Number of draws.
+            propagate (bool):
+                If True, propagates uncertainties on mode periods. Otherwise,
+                the mean period difference between a TAR model and observed
+                modes is used as a "fictive" uncertainty.
+            tolerance (float):
+                Only used if propagate is False. Maximum relative period
+                difference tolerated to associate an observed mode to one of the
+                TAR model.
+        """
+        if propagate == True and hasattr(self.spectrum,'errs'):        # propagate errors on mode periods
             period_errs = self.spectrum.errs / self.spectrum.errs**2
         else:                                                           # or the mean difference between TAR model and observed modes
             self.tolerance = tolerance
@@ -127,7 +201,13 @@ class IDMap(object):
         self.err_buoyancy_radius = np.std(results[:,1])
 
     def plot(self,cmap='cividis',save=False):
-        """ Plot the computed DFT map. """
+        """ Plots the computed DFT map.
+
+        Args:
+            cmap (str): Colour map to use for the plot.
+            save (bool): If True, saves the figure to a png file.
+
+        """
         plt.figure()
         plt.tick_params(axis='both',direction='inout',which='major',top=False,right=False)
         plt.tick_params(axis='both',direction='inout',which='minor',top=False,right=False)
@@ -154,7 +234,9 @@ class IDMap(object):
         plt.show()
 
     def save(self):
-        """ Save results, log and plots. """
+        """ Saves results, log and plots.
+
+        """
         if hasattr(self.spectrum,"path"):
             filename = self.spectrum.path.split("/")[-1]+"_"
         else:
@@ -221,9 +303,16 @@ class IDMap(object):
 # Auxiliary functions used by IDmap methods
 
 def dft(P,f0_vect):
-    """
-    Compute the Discrete Fourier Transform (DFT) of P at each frequency
-    in f0_vect.
+    """ Computes the Discrete Fourier Transform (DFT) of the spectrum which
+    modes have for periods P and for amplitudes one.
+
+    Args:
+        P (np.array): Mode periods (in d).
+        f0_vect (np.array): Frequencies at which the DFT is evaluated (in c/d).
+
+    Returns:
+        np.array: The Power Spectral Density (PSD).
+
     """
     N = len(P)
     cos = np.zeros(len(f0_vect))
