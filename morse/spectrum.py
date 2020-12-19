@@ -2,7 +2,6 @@
 #
 import numpy as np
 import matplotlib.pyplot as plt
-#import astropy.units as u
 from scipy.interpolate import interp1d
 from copy import deepcopy
 
@@ -33,8 +32,7 @@ class Spectrum(object):
     def __init__(self):
         """ Initialises an instance of Spectrum """
 
-    def load(self,path='test/kic8375138_test.freq', colfreqs=0, colerrs=-1,
-        ufreqs='u.microHertz', colamps=-1):
+    def load(self, path, colfreqs=0, colerrs=-1, colamps=-1):
         """ Loads frequency data from a file.
 
         The file must contain the mode frequencies in µHz at the very least.
@@ -50,10 +48,10 @@ class Spectrum(object):
         """
         self.path = path
         data = np.genfromtxt(self.path)
-        self.freqs = data[:,colfreqs]  #* ufreqs
+        self.freqs = data[:,colfreqs]
         self.periods = factor / self.freqs
         if colerrs != -1:
-            self.errs = data[:,colerrs]  #* ufreqs
+            self.errs = data[:,colerrs]
         if colamps != -1:
             self.amps = data[:,colamps]
 
@@ -107,8 +105,11 @@ class Spectrum(object):
     def plot(self):
         """ Plots the oscillation spectrum. """
         plt.figure()
-        plt.vlines(self.freqs,0,self.amps,lw=1)
-        plt.xlabel('Frequency ('+str(self.ufreqs)+')')
+        if hasattr(self,'amps'):
+            plt.vlines(self.freqs,0,self.amps,lw=1)
+        else:
+            plt.vlines(self.freqs,0,1,lw=1)
+        plt.xlabel('Frequency (µHz)')
         plt.ylabel('Amplitude')
         plt.show()
 
