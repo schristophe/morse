@@ -2,8 +2,10 @@
 #
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.interpolate import interp1d
+
 from copy import deepcopy
+from scipy.interpolate import interp1d
+from sklearn.cluster import DBSCAN
 
 from .auxil import *
 from .eigenvalue import *
@@ -162,9 +164,35 @@ class Spectrum(object):
             filtered_spectrum.periods_co = filtered_spectrum.periods_co[filter]
         return filtered_spectrum
 
-    def clustering(self):
-        """ """
+    def clustering(self, eps, min_samples):
+        """ Automatically detects frequency groups using the scikit-learn
+        DBSCAN clustering algorithm.
 
+        Args:
+            eps (float):
+                Maximum distance between two peak frequencies for one to be
+                considered in the neighbourhood of the other.
+            min_samples (int):
+                Minimum number of peak frequencies in a neighbourhood for a
+                given peak frequency to be considered as a core point (including
+                the frequency peak considered).
+
+        Returns:
+            frequency_groups (np.array):
+                Array of Spectrum objects representing the frequency groups
+                detected by the clustering algorithm. They are ordered by
+                increasing frequency.
+        """
+        db = DBSCAN(eps = eps, min_samples = min_samples).fit(self.freqs.reshape(-1,1))
+        nb_clusters = len(set(db.labels_)) - (1 if -1 in db.labels_ else 0)
+        frequency_groups = np.array([])
+        fmins = np.array([])
+        for i in np.arange(nb_clusters):
+            ifg = (db.labels_ == i)
+            frequency_groups = np.append(frequency_groups, self.filter(boolean=ifg))
+            fmins = np.append(fmins,frequency_groups[i].freqs.min())
+        frequency_groups = frequency_groups[np.argsort(fmins)]
+        return frequency_groups
 
 def find_zeros(x,y,nb_iterations):
     """ Finds the zero of a function y(x) by the secant method. Only works for a
