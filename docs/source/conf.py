@@ -12,13 +12,13 @@
 #
 import os
 import sys
-#sys.path.insert(0,'../')
-sys.path.insert(0, os.path.abspath('../morse/'))
+sys.path.insert(0, os.path.abspath('../..'))
+
 
 # -- Project information -----------------------------------------------------
 
 project = 'morse'
-copyright = '2020, Steven Christophe'
+copyright = '2020-2021, Steven Christophe'
 author = 'Steven Christophe'
 
 # The full version, including alpha/beta/rc tags
