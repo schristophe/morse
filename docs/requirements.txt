@@ -1,2 +1,6 @@
 sphinx>=3.2
 nbsphinx
+numpy
+matplotlib
+scipy
+scikit-learn
