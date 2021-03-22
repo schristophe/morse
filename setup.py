@@ -9,7 +9,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="morse-asteroseismo", # Replace with your own username
-    version="0.0.2",
+    version="0.0.3",
     author="Steven Christophe",
     author_email="steven.christophe@obspm.fr",
     description="Asteroseismic analysis of gamma Dor and SPB stars",
@@ -17,7 +17,8 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/schristophe/morse",
     packages=setuptools.find_packages(),
-    package_data={'': ['README.md', 'LICENSE']},
+    include_package_data=True,
+    package_data={'': ['README.md', 'LICENSE','morse/lambda/lambda*.txt']},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
