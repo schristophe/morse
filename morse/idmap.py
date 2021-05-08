@@ -315,11 +315,6 @@ def dft(P,f0_vect):
 
     """
     N = len(P)
-    cos = np.zeros(len(f0_vect))
-    sin = np.zeros(len(f0_vect))
-    for i in np.arange(N):
-        for j in np.arange(len(f0_vect)):
-            cos[j] = cos[j] + np.cos(2*np.pi*f0_vect[j]*P[i])
-            sin[j] = sin[j] + np.sin(2*np.pi*f0_vect[j]*P[i])
-    dft = (1.0/N)*(cos**2 + sin**2)
+    M = f0_vect.reshape((len(f0_vect),1)) @ P.reshape((1,N))
+    dft = (1/N) * (np.sum(np.cos(2*np.pi*M),axis=1)**2 + np.sum(np.sin(2*np.pi*M),axis=1)**2)
     return dft
