@@ -1,5 +1,6 @@
 sphinx>=3.2
 nbsphinx
+docutils<0.17
 numpy
 matplotlib
 scipy
