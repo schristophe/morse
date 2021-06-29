@@ -18,8 +18,8 @@ using the list of frequencies extracted from the oscillation spectrum.
    :maxdepth: 2
    :caption: Getting Started
 
-   getting_started/core_principle
    getting_started/installation
+   getting_started/how_does_it_work   
 
 .. toctree::
    :maxdepth: 2
