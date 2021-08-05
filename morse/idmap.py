@@ -142,20 +142,22 @@ class IDMap(object):
         else:                                                           # or the mean difference between TAR model and observed modes
             self.tolerance = tolerance
             # Get the mean offset
-            periods_co = in2co(self.spectrum.periods, self.m, self.k, self.nurot, self.folded)
-            stretched_periods = stretch(self.m,self.k,periods_co, self.eigenvalue, self.nurot)
-            stretched_periods_mod = np.mod(stretched_periods, self.buoyancy_radius)
-            offset = np.mean(stretched_periods_mod) / self.buoyancy_radius
+            nurot = self.nurot / factor # must be in c/d when passed to in2co() and stretch()
+            buoyancy_radius = self.buoyancy_radius / 86400. # must be in d because stretch_periods are in d
+            periods_co = in2co(self.spectrum.periods, self.m, self.k, nurot, self.folded)
+            stretched_periods = stretch(self.m, self.k, periods_co, self.eigenvalue, nurot)
+            stretched_periods_mod = np.mod(stretched_periods, buoyancy_radius)
+            offset = np.mean(stretched_periods_mod) / buoyancy_radius
             # Adjust offset if it is close to 0 or 1
-            modplus = np.argwhere(stretched_periods_mod < 0.10 * self.buoyancy_radius)[:,0]
-            modminus = np.argwhere(stretched_periods_mod > 0.90 * self.buoyancy_radius)[:,0]
+            modplus = np.argwhere(stretched_periods_mod < 0.10 * buoyancy_radius)[:,0]
+            modminus = np.argwhere(stretched_periods_mod > 0.90 * buoyancy_radius)[:,0]
             if (len(modplus) > 0) & (len(modminus) > 0):
                 if len(modplus) > len(modminus):
-                    stretched_periods_mod = np.where(stretched_periods_mod < 0.50 * self.buoyancy_radius, stretched_periods_mod + self.buoyancy_radius, stretched_periods_mod)
-                    offset = np.mean(stretched_periods_mod) / self.buoyancy_radius
+                    stretched_periods_mod = np.where(stretched_periods_mod < 0.50 * buoyancy_radius, stretched_periods_mod + buoyancy_radius, stretched_periods_mod)
+                    offset = np.mean(stretched_periods_mod) / buoyancy_radius
                 else:
-                    stretched_periods_mod = np.where(stretched_periods_mod > 0.50 * self.buoyancy_radius, stretched_periods_mod - self.buoyancy_radius, stretched_periods_mod)
-                    offset = np.mean(stretched_periods_mod) / self.buoyancy_radius
+                    stretched_periods_mod = np.where(stretched_periods_mod > 0.50 * buoyancy_radius, stretched_periods_mod - buoyancy_radius, stretched_periods_mod)
+                    offset = np.mean(stretched_periods_mod) / buoyancy_radius
             if abs(offset) >= 1:
                 print('Warning: the offset was larger than 1.00.')
                 offset = offset - 1
