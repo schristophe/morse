@@ -219,7 +219,7 @@ def find_zeros(x,y,nb_iterations):
     for i in np.arange(nb_iterations):
         y_x1 = g(x1)
         y_x0 = g(x0)
-        if abs(y_x1) < 1e-8 or abs(y_x0) < 1e-8:
+        if abs(y_x1) < 1e-14 or abs(y_x0) < 1e-14:
             if y_x1 > y_x0:
                 return x0
             else:
