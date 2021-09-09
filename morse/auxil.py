@@ -5,6 +5,10 @@ import matplotlib.pyplot as plt
 import sys
 
 from scipy.interpolate import interp1d
+from scipy.signal import correlate, correlation_lags
+
+from .eigenvalue import *
+from .spectrum import *
 
 factor = 1e6 / 86400    # 1 cycle/day in µHz
 
@@ -125,3 +129,80 @@ def progress_bar(count, total, status=''):
     sys.stdout.write('[%s]  %s%s %s\r' % (bar, percents, '%', status))
     sys.stdout.flush()
     if count == total: print('\n')
+
+
+def generate_spectrum(periods, sigma, period_max, sampling_rate):
+    """ Generates a spectrum by modelling each peak by a Gaussian
+    function with a standard deviation of sigma.
+
+    Args:
+        periods (np.array): Mode periods.
+        sigma (float): Standard deviation of Gaussian functions.
+        period_max (float): Returned spectrum is computed up to this period.
+        sampling_rate (float): Sampling rate of the return spectrum.
+
+
+    Returns:
+        np.array: Artificially generated spectrum.
+
+    """
+    P = np.arange(0, period_max, 1/sampling_rate)
+    spectrum = 0
+    for period in periods:
+        spectrum = spectrum + np.exp(- (P - period) ** 2 / (2 * sigma ** 2))
+    return spectrum
+
+
+def get_offset(spectrum, m, k, nurot, buoyancy_radius, folded = False):
+    """ Determines the value of the offset by cross-correlating the stretched
+    observed spectrum with the stretched TAR model computed for the parameters
+    (m, k, nurot, buoyancy radius).
+
+    Args:
+        spectrum (Spectrum):
+        m (int): Azimuthal order.
+        k (int): Ordering index (Lee & Saio 97).
+        nurot (float): Rotation frequency (in c/d).
+        buoyancy_radius (float): Buoyancy radius (in d).
+        folded (bool):
+            If True, it is assumed that the spectrum is folded in the
+            inertial frame.
+
+    Returns:
+        float: Offset (in d).
+    """
+    # Observed spectrum: switch to corotating frame and stretch the spectrum
+    periods_co = in2co(spectrum.periods, m, k, nurot, folded)
+    obs_stretched = stretch(m, k, periods_co, Eigenvalue(m, k), nurot)
+
+    # Generate spectrum model
+    spectrum_model = Spectrum()
+    spectrum_model.generate(m, k, nurot * factor, buoyancy_radius * 86400,
+            offset = 0, nmax = 110)
+    spectrum_model = spectrum_model.filter(
+            periodmax = np.max(spectrum.periods) + 0.5)
+    # Stretch it
+    mod_stretched = stretch(m, k, spectrum_model.periods_co, Eigenvalue(m, k),
+            nurot)
+
+    # Artifically broaden peaks in the spectra for the cross-correlation
+    # (because the generated TAR model is not perfectly modelling the observed
+    # periods)
+    period_max = np.max(obs_stretched) + 0.5
+    sigma = 1e-3
+    sampling_rate = 3e4
+    obs_broaden = generate_spectrum(obs_stretched, sigma, period_max,
+            sampling_rate)
+    mod_broaden = generate_spectrum(mod_stretched, sigma, period_max,
+            sampling_rate)
+
+    # Compute the cross-correlation of the two broaden spectra
+    correlation = correlate(obs_broaden, mod_broaden, mode = 'full')
+    lags = correlation_lags(obs_broaden.size, mod_broaden.size,
+            mode = 'full') / (sampling_rate * buoyancy_radius)
+
+    # Offset is between 0 and 1 (by definition)
+    lag0 = len(lags) // 2
+    lag_P0 = lag0 + int(buoyancy_radius * sampling_rate)
+    offset = lags[lag0:lag_P0][np.argmax(correlation[lag0:lag_P0])]
+    return offset

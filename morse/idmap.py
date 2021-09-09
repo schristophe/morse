@@ -142,29 +142,13 @@ class IDMap(object):
         else:                                                           # or the mean difference between TAR model and observed modes
             self.tolerance = tolerance
             # Get the mean offset
-            nurot = self.nurot / factor # must be in c/d when passed to in2co() and stretch()
-            buoyancy_radius = self.buoyancy_radius / 86400. # must be in d because stretch_periods are in d
-            periods_co = in2co(self.spectrum.periods, self.m, self.k, nurot, self.folded)
-            stretched_periods = stretch(self.m, self.k, periods_co, self.eigenvalue, nurot)
-            stretched_periods_mod = np.mod(stretched_periods, buoyancy_radius)
-            offset = np.mean(stretched_periods_mod) / buoyancy_radius
-            # Adjust offset if it is close to 0 or 1
-            modplus = np.argwhere(stretched_periods_mod < 0.10 * buoyancy_radius)[:,0]
-            modminus = np.argwhere(stretched_periods_mod > 0.90 * buoyancy_radius)[:,0]
-            if (len(modplus) > 0) & (len(modminus) > 0):
-                if len(modplus) > len(modminus):
-                    stretched_periods_mod = np.where(stretched_periods_mod < 0.50 * buoyancy_radius, stretched_periods_mod + buoyancy_radius, stretched_periods_mod)
-                    offset = np.mean(stretched_periods_mod) / buoyancy_radius
-                else:
-                    stretched_periods_mod = np.where(stretched_periods_mod > 0.50 * buoyancy_radius, stretched_periods_mod - buoyancy_radius, stretched_periods_mod)
-                    offset = np.mean(stretched_periods_mod) / buoyancy_radius
-            if abs(offset) >= 1:
-                print('Warning: the offset was larger than 1.00.')
-                offset = offset - 1
-            self.offset = offset
-            # Generate a synthetic spectrum within the asymptotic traditional approximation
+            nurot = self.nurot / factor # µHz -> c/d
+            buoyancy_radius = self.buoyancy_radius / 86400. # s -> d
+            self.offset = get_offset(self.spectrum, self.m, self.k, nurot,
+                    buoyancy_radius, folded = self.folded)
+            # Generate a synthetic spectrum within the asymptotic TAR
             synth_spectrum = Spectrum()
-            synth_spectrum.generate(self.m ,self.k, self.nurot, self.buoyancy_radius, offset=offset)
+            synth_spectrum.generate(self.m ,self.k, self.nurot, self.buoyancy_radius, offset=self.offset)
             # Filter synthetic modes that are not in spectrum
             filt_synth_spectrum = synth_spectrum.filter(periodmin=(1 - 5 * tolerance) * min(self.spectrum.periods),periodmax=(1 + 5 * tolerance) * max(self.spectrum.periods))
             # For each observed mode, associate the nearest synthetic mode if the period difference is inferior to tolerance
