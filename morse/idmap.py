@@ -86,7 +86,7 @@ class IDMap(object):
         dft_map = np.nan * np.ones((len(nurot_vect),len(f0_vect)))
         # For each value of nurot, stretches the oscillation spectrum and
         # computes its DFT
-        nurot_vect = nurot_vect / factor    # converting to c/d for computations
+        nurot_vect = nurot_vect / FACTOR_ROT    # converting to c/d for computations
         for i in np.arange(len(nurot_vect)):
             progress_bar(i+1, len(nurot_vect), 'Computing the ID map...')
             nurot = nurot_vect[i]
@@ -95,8 +95,8 @@ class IDMap(object):
                 stretched_periods = stretch(m, k, periods_co,self.eigenvalue,nurot)
                 resolution[i] = 1.0 / (np.max(stretched_periods) - np.min(stretched_periods))
                 # Compute the DFT of the stretched spectrum
-                dft_map[i,:] = dft(stretched_periods, f0_vect / factor) # f0_vect has to be in c/d
-        self.resolution = resolution * factor
+                dft_map[i,:] = dft(stretched_periods, f0_vect / FACTOR_ROT) # f0_vect has to be in c/d
+        self.resolution = resolution * FACTOR_ROT
         self.dft_map = dft_map
         # Looking for which parameters (nurot,f0) maximise the PSD in dft_map
         self.psd_max = np.nanmax(self.dft_map)
@@ -142,7 +142,7 @@ class IDMap(object):
         else:                                                           # or the mean difference between TAR model and observed modes
             self.tolerance = tolerance
             # Get the mean offset
-            nurot = self.nurot / factor # µHz -> c/d
+            nurot = self.nurot / FACTOR_ROT # µHz -> c/d
             buoyancy_radius = self.buoyancy_radius / 86400. # s -> d
             self.offset = get_offset(self.spectrum, self.m, self.k, nurot,
                     buoyancy_radius, folded = self.folded)

@@ -51,7 +51,7 @@ class Spectrum(object):
         self.path = path
         data = np.genfromtxt(self.path)
         self.freqs = data[:,colfreqs]
-        self.periods = factor / self.freqs
+        self.periods = FACTOR_ROT / self.freqs
         if colerrs != -1:
             self.errs = data[:,colerrs]
         if colamps != -1:
@@ -81,7 +81,7 @@ class Spectrum(object):
         elif k + abs(m) <= 0:
             n = np.arange(nmin,nmax+1,1)
         self.n = n
-        nurot = nurot / factor # nurot has to be in c/d
+        nurot = nurot / FACTOR_ROT # nurot has to be in c/d
         buoyancy_radius = buoyancy_radius / 86400. # buoyancy_radius in d
         if nurot > 0:
             eigenvalue = Eigenvalue(m,k)
@@ -101,7 +101,7 @@ class Spectrum(object):
                 sys.exit('Radial modes are not handled in this version of the code.')
         self.periods_co = periods_co
         self.periods = co2in(periods_co,m,nurot)
-        self.freqs = factor / self.periods  # in µHz
+        self.freqs = FACTOR_ROT / self.periods  # in µHz
 
 
     def plot(self):

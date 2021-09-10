@@ -10,7 +10,9 @@ from scipy.signal import correlate, correlation_lags
 from .eigenvalue import *
 from .spectrum import *
 
-factor = 1e6 / 86400    # 1 cycle/day in µHz
+
+FACTOR_ROT = 1e6 / 86400    # 1 cycle/day in µHz
+
 
 def co2in(Pco,m,nurot):
     """ Computes mode periods in the inertial frame of reference.
@@ -79,7 +81,7 @@ def in2co(Pin, m, k, nurot, folded=False, ed=False):
     else:
         if len(index_neg) != 0:
             print('/!\ Negative period(s) in the corotating frame at nurotmax = '+\
-                        str("%.2f" % (factor*nurot))+' muHz.')
+                        str("%.2f" % (FACTOR_ROT*nurot))+' muHz.')
         return Pco, index_keep
 
 
@@ -177,7 +179,7 @@ def get_offset(spectrum, m, k, nurot, buoyancy_radius, folded = False):
 
     # Generate spectrum model
     spectrum_model = Spectrum()
-    spectrum_model.generate(m, k, nurot * factor, buoyancy_radius * 86400,
+    spectrum_model.generate(m, k, nurot * FACTOR_ROT, buoyancy_radius * 86400,
             offset = 0, nmax = 110)
     spectrum_model = spectrum_model.filter(
             periodmax = np.max(spectrum.periods) + 0.5)

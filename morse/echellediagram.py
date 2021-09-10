@@ -52,8 +52,8 @@ class EchelleDiagram(object):
         self.buoyancy_radius = buoyancy_radius
         self.folded = folded
         eigenvalue = Eigenvalue(m, k)
-        periods_co, self.index_keep = in2co(spectrum.periods, m, k, nurot / factor, folded, ed=True)   # moving to the co-rotating frame of reference
-        stretched_periods = stretch(m, k, periods_co, eigenvalue, nurot / factor)
+        periods_co, self.index_keep = in2co(spectrum.periods, m, k, nurot / FACTOR_ROT, folded, ed=True)   # moving to the co-rotating frame of reference
+        stretched_periods = stretch(m, k, periods_co, eigenvalue, nurot / FACTOR_ROT)
         self.stretched_periods_mod = np.mod(stretched_periods, buoyancy_radius / 86400)
 
     def plot(self, save=False):
