@@ -11,11 +11,11 @@ from .eigenvalue import *
 from .spectrum import *
 
 
-FACTOR_ROT = 1e6 / 86400    # 1 cycle/day in µHz
+FACTOR_ROT = 1e6 / 86400  # 1 cycle/day in µHz
 
 
-def co2in(Pco,m,nurot):
-    """ Computes mode periods in the inertial frame of reference.
+def co2in(Pco, m, nurot):
+    """Computes mode periods in the inertial frame of reference.
 
     Args:
         Pco (np.array): Mode periods in the co-rotating frame (in d).
@@ -26,12 +26,13 @@ def co2in(Pco,m,nurot):
         np.array: Mode periods in the inertial frame (in d).
 
     """
-    Pin = Pco / (1 - m*Pco*nurot)
+    Pin = Pco / (1 - m * Pco * nurot)
     Pin = abs(Pin)
     return Pin
 
+
 def in2co(Pin, m, k, nurot, folded=False, ed=False):
-    """ Computes mode periods in the co-rotating frame of reference.
+    """Computes mode periods in the co-rotating frame of reference.
 
     Args:
         Pin (np.array): Mode periods in the inertial frame (in d).
@@ -51,42 +52,45 @@ def in2co(Pin, m, k, nurot, folded=False, ed=False):
     """
     # Manual folding
     if folded == False:
-        Pco = Pin / (1 + m*Pin*nurot)
+        Pco = Pin / (1 + m * Pin * nurot)
     else:
-        Pco = - Pin / (1 - m*Pin*nurot)
+        Pco = -Pin / (1 - m * Pin * nurot)
     # Auto-folding for quasi-toroidal modes
     if k == -2 and m == 1 and folded == False:
-        Pco = - Pin / (1 - m*Pin*nurot)
+        Pco = -Pin / (1 - m * Pin * nurot)
     if k == -1 and m == 1 and folded == False:
-        Pco = - Pin / (1 - m*Pin*nurot)
+        Pco = -Pin / (1 - m * Pin * nurot)
     # Discarding modes for which the spin parameter is too large or too small
     # (but may keep those that cannot exist if m < 0)
     index_neg = np.where(Pco < 0)[0]
-    s = 2*np.abs(Pco)*nurot # obs. spin parameter
-    #print(s)
+    s = 2 * np.abs(Pco) * nurot  # obs. spin parameter
+    # print(s)
     if k + abs(m) > 0:
         index_keep = np.where(s <= 20)[0]
     elif k == -2 and m == 1:
-        index_keep = np.where((s <= 100) & (s >= -k*(-k-1)+0.05))[0]
+        index_keep = np.where((s <= 100) & (s >= -k * (-k - 1) + 0.05))[0]
     else:
-        index_keep = np.where((s <= 19.80) & (s >= -k*(-k-1)+0.05))[0]
+        index_keep = np.where((s <= 19.80) & (s >= -k * (-k - 1) + 0.05))[0]
     Pco = np.abs(Pco)[index_keep]
     #  Checking if there are any modes left.
     if len(index_keep) == 0:
-        print('/!\ No modes left, spin parameters fall outside of tabulated values')
+        print("/!\ No modes left, spin parameters fall outside of tabulated values")
         Pco = np.ones(len(Pin))
     # Managing outputs
     if ed == False:
         return Pco
     else:
         if len(index_neg) != 0:
-            print('/!\ Negative period(s) in the corotating frame at nurotmax = '+\
-                        str("%.2f" % (FACTOR_ROT*nurot))+' muHz.')
+            print(
+                "/!\ Negative period(s) in the corotating frame at nurotmax = "
+                + str("%.2f" % (FACTOR_ROT * nurot))
+                + " muHz."
+            )
         return Pco, index_keep
 
 
 def stretch(m, k, periods_co, eigenvalue, nurot):
-    """ Stretches the mode periods.
+    """Stretches the mode periods.
 
     Args:
         m (int): Azimuthal order.
@@ -101,21 +105,27 @@ def stretch(m, k, periods_co, eigenvalue, nurot):
     """
     if nurot > 0:
         P = eigenvalue.eta / (2 * nurot)
-        interp_lamb = interp1d(P,eigenvalue.lamb,kind='cubic')
+        interp_lamb = interp1d(P, eigenvalue.lamb, kind="cubic")
         stretched_periods = periods_co * np.sqrt(interp_lamb(periods_co))
     elif nurot == 0:
         if k + abs(m) > 0:
             l = k + abs(m)  # angular degree
-            stretched_periods = np.sqrt(l*(l+1)) * periods_co
+            stretched_periods = np.sqrt(l * (l + 1)) * periods_co
         else:
-            sys.exit('(k = '+str(k)+', m = '+str(m)+') modes does not exist without rotation')
+            sys.exit(
+                "(k = "
+                + str(k)
+                + ", m = "
+                + str(m)
+                + ") modes does not exist without rotation"
+            )
     else:
-        sys.exit('Rotation frequency cannot be negative')
+        sys.exit("Rotation frequency cannot be negative")
     return stretched_periods
 
 
-def progress_bar(count, total, status=''):
-    """ Displays a progress bar in terminal.
+def progress_bar(count, total, status=""):
+    """Displays a progress bar in terminal.
 
     Args:
         count (int): Iteration number.
@@ -125,16 +135,17 @@ def progress_bar(count, total, status=''):
     """
     bar_length = 15
     filled_length = int(round(15 * count / total))
-    bar = '=' * filled_length + '-' * (bar_length - filled_length)
+    bar = "=" * filled_length + "-" * (bar_length - filled_length)
 
     percents = 100 * count / total
-    sys.stdout.write('[%s]  %s%s %s\r' % (bar, percents, '%', status))
+    sys.stdout.write("[%s]  %s%s %s\r" % (bar, percents, "%", status))
     sys.stdout.flush()
-    if count == total: print('\n')
+    if count == total:
+        print("\n")
 
 
 def generate_spectrum(periods, sigma, period_max, sampling_rate):
-    """ Generates a spectrum by modelling each peak by a Gaussian
+    """Generates a spectrum by modelling each peak by a Gaussian
     function with a standard deviation of sigma.
 
     Args:
@@ -148,15 +159,15 @@ def generate_spectrum(periods, sigma, period_max, sampling_rate):
         np.array: Artificially generated spectrum.
 
     """
-    P = np.arange(0, period_max, 1/sampling_rate)
+    P = np.arange(0, period_max, 1 / sampling_rate)
     spectrum = 0
     for period in periods:
-        spectrum = spectrum + np.exp(- (P - period) ** 2 / (2 * sigma ** 2))
+        spectrum = spectrum + np.exp(-((P - period) ** 2) / (2 * sigma ** 2))
     return spectrum
 
 
-def get_offset(spectrum, m, k, nurot, buoyancy_radius, folded = False):
-    """ Determines the value of the offset by cross-correlating the stretched
+def get_offset(spectrum, m, k, nurot, buoyancy_radius, folded=False):
+    """Determines the value of the offset by cross-correlating the stretched
     observed spectrum with the stretched TAR model computed for the parameters
     (m, k, nurot, buoyancy radius).
 
@@ -179,13 +190,12 @@ def get_offset(spectrum, m, k, nurot, buoyancy_radius, folded = False):
 
     # Generate spectrum model
     spectrum_model = Spectrum()
-    spectrum_model.generate(m, k, nurot * FACTOR_ROT, buoyancy_radius * 86400,
-            offset = 0, nmax = 110)
-    spectrum_model = spectrum_model.filter(
-            periodmax = np.max(spectrum.periods) + 0.5)
+    spectrum_model.generate(
+        m, k, nurot * FACTOR_ROT, buoyancy_radius * 86400, offset=0, nmax=110
+    )
+    spectrum_model = spectrum_model.filter(periodmax=np.max(spectrum.periods) + 0.5)
     # Stretch it
-    mod_stretched = stretch(m, k, spectrum_model.periods_co, Eigenvalue(m, k),
-            nurot)
+    mod_stretched = stretch(m, k, spectrum_model.periods_co, Eigenvalue(m, k), nurot)
 
     # Artifically broaden peaks in the spectra for the cross-correlation
     # (because the generated TAR model is not perfectly modelling the observed
@@ -193,15 +203,14 @@ def get_offset(spectrum, m, k, nurot, buoyancy_radius, folded = False):
     period_max = np.max(obs_stretched) + 0.5
     sigma = 1e-3
     sampling_rate = 3e4
-    obs_broaden = generate_spectrum(obs_stretched, sigma, period_max,
-            sampling_rate)
-    mod_broaden = generate_spectrum(mod_stretched, sigma, period_max,
-            sampling_rate)
+    obs_broaden = generate_spectrum(obs_stretched, sigma, period_max, sampling_rate)
+    mod_broaden = generate_spectrum(mod_stretched, sigma, period_max, sampling_rate)
 
     # Compute the cross-correlation of the two broaden spectra
-    correlation = correlate(obs_broaden, mod_broaden, mode = 'full')
-    lags = correlation_lags(obs_broaden.size, mod_broaden.size,
-            mode = 'full') / (sampling_rate * buoyancy_radius)
+    correlation = correlate(obs_broaden, mod_broaden, mode="full")
+    lags = correlation_lags(obs_broaden.size, mod_broaden.size, mode="full") / (
+        sampling_rate * buoyancy_radius
+    )
 
     # Offset is between 0 and 1 (by definition)
     lag0 = len(lags) // 2

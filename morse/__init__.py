@@ -1,6 +1,6 @@
 # initalise morse
 
-__all__ = ["echellediagram","eigenvalue","idmap","pattern","spectrum"]
+__all__ = ["echellediagram", "eigenvalue", "idmap", "pattern", "spectrum"]
 __version__ = "0.0.1"
 
 __author__ = "Steven Christophe <steven.christophe@obspm.fr>"
