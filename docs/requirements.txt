@@ -3,5 +3,5 @@ nbsphinx
 docutils<0.17
 numpy
 matplotlib
-scipy
+scipy>=1.6.0
 scikit-learn
