@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 from copy import deepcopy
 from scipy.interpolate import interp1d
+from scipy.optimize import newton
 from sklearn.cluster import DBSCAN
 
 from .auxil import *
@@ -361,37 +362,24 @@ class Spectrum(object):
             self.periods_co2 = self.periods_co2[i_sorted]
 
 
-def find_zeros(x, y, nb_iterations):
+def find_zeros(x, y, max_iter):
     """Finds the zero of a function y(x) by the secant method. Only works for a
     strictly monotonic function.
 
     Args:
         x (np.array): Arguments.
         y (np.array): Functions values.
-        nb_iterations (int): Number of iterations.
+        max_iter (int): Maximum number of iterations.
 
     Returns:
         float: The zero.
     """
-    # Finding an upper and a lower bound of the zero
+    # Get an initial value close to the zero
     i_min = np.argmin(abs(y))
     x0 = x[i_min]
-    if y[i_min] > 0:
-        x1 = x[i_min + 1]
-    else:
-        x1 = x[i_min - 1]
-    # Interpolating the function
+
+    # Interpolate the function
     g = interp1d(x, y, kind="quadratic")
+
     # Root-finding algorithm (secant method)
-    for i in np.arange(nb_iterations):
-        y_x1 = g(x1)
-        y_x0 = g(x0)
-        if abs(y_x1) < 1e-14 or abs(y_x0) < 1e-14:
-            if y_x1 > y_x0:
-                return x0
-            else:
-                return x1
-        x_temp = x1
-        x1 = x1 - y_x1 * (x1 - x0) / (y_x1 - y_x0)
-        x0 = x_temp
-    return x1
+    return newton(g, x0, tol=1e-14, maxiter=max_iter)
