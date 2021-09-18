@@ -227,6 +227,139 @@ class Spectrum(object):
         frequency_groups = frequency_groups[np.argsort(fmins)]
         return frequency_groups
 
+    def match(
+        self,
+        model,
+        tolerance=5e-4,
+        max_miss=5,
+    ):
+        """Finds common modes with a reference spectrum.
+
+        Args:
+            model (Spectrum): Reference spectrum.
+            tolerance (float): Relative period difference tolerated.
+            max_miss (int): Maximum number of consecutive missing modes.
+
+        Returns:
+            Spectrum: Spectrum containing only the common modes.
+
+        """
+        # Keep only the part of model that covers observed periods
+        model = model.filter(
+            periodmin=(1 - 2 * tolerance) * min(self.periods),
+            periodmax=(1 + 2 * tolerance) * max(self.periods),
+        )
+
+        i_spectrum = []  # indices of common frequencies in self
+        i_model = []  # in model
+        #
+        if hasattr(self, "amps"):
+            for k in np.arange(len(model.periods)):
+                i_match = np.argwhere(
+                    abs(self.periods / model.periods[k] - 1) <= tolerance
+                )[:, 0]
+                if i_match.size > 0:
+                    i_match = i_match[np.argmax(self.amps[i_match])]
+                    i_spectrum.append(i_match)
+                    i_model.append(k)
+        #
+        else:
+            for k in np.arange(len(model.periods)):
+                i_match = np.argmin(self.periods - model.periods[k])
+                if abs(self.periods / model.periods[k] - 1) <= tolerance:
+                    i_spectrum.append(i_match)
+                    i_model.append(k)
+
+        i_spectrum = i_spectrum = np.array(i_spectrum)
+        i_model = np.array(i_model)
+
+        # Remove duplicate matches
+        # Several modes in model may be matched with the same mode in self
+        # usually because tolerance is too high
+        to_delete = np.array([]).astype(int)
+        k = 0
+        while k < len(i_spectrum):
+            j_dupli = np.argwhere(i_spectrum == i_spectrum[k])[:, 0]
+            if j_dupli.size > 1:
+                diff = abs(
+                    self.periods[i_spectrum[j_dupli]] - model.periods[i_model[j_dupli]]
+                )
+                to_delete = np.append(
+                    to_delete, j_dupli[0] + np.argwhere(diff != np.min(diff))[:, 0]
+                )
+            k += j_dupli.size
+        i_spectrum = np.delete(i_spectrum, to_delete)
+        i_model = np.delete(i_model, to_delete)
+
+        # max_miss (to be implemented)
+
+        #
+        matched = deepcopy(self)
+        matched.periods = matched.periods[i_spectrum]
+        matched.freqs = matched.freqs[i_spectrum]
+        if hasattr(matched, "amps"):
+            matched.amps = matched.amps[i_spectrum]
+        if hasattr(matched, "n"):
+            matched.n = matched.n[i_spectrum]
+        if hasattr(matched, "errs"):
+            matched.errs = matched.errs[i_spectrum]
+        if hasattr(matched, "periods_co"):
+            matched.periods_co = matched.periods_co[i_spectrum]
+
+        matched.periods2 = model.periods[i_model]
+        matched.freqs2 = model.freqs[i_model]
+        if hasattr(model, "amps"):
+            matched.amps2 = model.amps[i_model]
+        if hasattr(model, "n"):
+            matched.n2 = model.n[i_model]
+        if hasattr(model, "errs"):
+            matched.errs2 = model.errs[i_model]
+        if hasattr(model, "periods_co"):
+            matched.periods_co2 = model.periods_co[i_model]
+        print(len(matched.periods))
+        return matched
+
+    def sort(self, by="periods", ascending=True):
+        """Sorts modes in spectrum.
+
+        Args:
+            by (str): Name of the quantity to sort by.
+            ascending: If True, sorts in ascending order else sorts descending.
+
+        Returns:
+            Spectrum: Sorted spectrum.
+        """
+        if by == "periods":
+            i_sorted = np.argsort(self.periods)
+        elif by == "freqs":
+            i_sorted = np.argsort(self.freqs)
+        else:
+            i_sorted = np.arange(len(self.periods))
+        if ascending == False:
+            i_sorted = i_sorted[::-1]
+
+        self.periods = self.periods[i_sorted]
+        self.freqs = self.freqs[i_sorted]
+        if hasattr(self, "amps"):
+            self.amps = self.amps[i_sorted]
+        if hasattr(self, "n"):
+            self.n = self.n[i_sorted]
+        if hasattr(self, "errs"):
+            self.errs = self.errs[i_sorted]
+        if hasattr(self, "periods_co"):
+            self.periods_co = self.periods_co[i_sorted]
+        if hasattr(self, "periods2"):
+            self.periods2 = self.periods2[i_sorted]
+            self.freqs2 = self.freqs2[i_sorted]
+        if hasattr(self, "amps2"):
+            self.amps2 = self.amps2[i_sorted]
+        if hasattr(self, "n2"):
+            self.n2 = self.n2[i_sorted]
+        if hasattr(self, "errs2"):
+            self.errs2 = self.errs2[i_sorted]
+        if hasattr(self, "periods_co2"):
+            self.periods_co2 = self.periods_co2[i_sorted]
+
 
 def find_zeros(x, y, nb_iterations):
     """Finds the zero of a function y(x) by the secant method. Only works for a
