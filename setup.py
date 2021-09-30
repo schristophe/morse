@@ -30,5 +30,11 @@ setuptools.setup(
     project_urls={
         "Documentation": "https://morse-asteroseismo.readthedocs.io/",
     },
-    python_requires=">=3.6",
+    python_requires=">=3.7",
+    install_requires=[
+        "numpy>=1.16.5",
+        "scipy>=1.6",
+        "matplotlib>=2.0",
+        "scikit-learn>=0.19",
+    ],
 )
