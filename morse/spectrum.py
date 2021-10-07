@@ -317,7 +317,6 @@ class Spectrum(object):
             matched.errs2 = model.errs[i_model]
         if hasattr(model, "periods_co"):
             matched.periods_co2 = model.periods_co[i_model]
-        print(len(matched.periods))
         return matched
 
     def sort(self, by="periods", ascending=True):
@@ -334,9 +333,13 @@ class Spectrum(object):
             i_sorted = np.argsort(self.periods)
         elif by == "freqs":
             i_sorted = np.argsort(self.freqs)
+        elif by == "n" and hasattr(self, "n"):
+            i_sorted = np.argsort(self.n)
+        elif by == "n" and hasattr(self, "n2"):
+            i_sorted = np.argsort(self.n2)
         else:
             i_sorted = np.arange(len(self.periods))
-        if ascending == False:
+        if not ascending:
             i_sorted = i_sorted[::-1]
 
         self.periods = self.periods[i_sorted]
