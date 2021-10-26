@@ -8,6 +8,7 @@ from copy import deepcopy
 from .auxil import *
 from .echellediagram import *
 from .eigenvalue import *
+from .pattern import *
 from .spectrum import *
 
 
@@ -135,8 +136,27 @@ class IDMap(object):
             folded=self.folded,
         )
 
-    def get_pattern(self, tolerance):
-        """ """
+    def get_pattern(self, tol=1e-3):
+        """If `flag_detection` is True, extracts the detected period spacing pattern.
+
+        Args:
+            tol (float):
+                Maximum relative difference tolerated between modelled and observed
+                periods of the pattern modes.
+        Returns:
+            Pattern: Extracted period spacing pattern.
+
+        """
+        if self.flag_detection:
+            return Pattern(
+                self.spectrum,
+                self.m,
+                self.k,
+                self.nurot,
+                self.buoyancy_radius,
+                self.folded,
+                tol,
+            )
 
     def get_param_uncertainties(self, ndraws=500, propagate=False, tolerance=5e-3):
         """Estimates the uncertainty on the rotation frequency and buoyancy
