@@ -32,9 +32,9 @@ class Pattern(object):
         err_buoyancy_radius (float): Error on fitted buoyancy_radius (s).
         offset (float): Offset.
 
-            It is assumed that the fitted nurot and buoyancy_radius are exact. Vary
-            widely with slighly different parameters therefore you should not attach any
-            physical meaning to it.
+            It is assumed that the fitted nurot and buoyancy_radius are exact. Offset
+            varies widely with slighly different parameters therefore you should not
+            attach any physical meaning to it.
 
         folded (bool):
             If True, it is assumed that the spectrum is folded in the inertial frame.
@@ -312,7 +312,8 @@ class Pattern(object):
 
     def save(self):
         """Saves information about the pattern (mode ID, rotation frequency,
-        buoyancy radius, modes) and plot.
+        buoyancy radius, modes) and saves a plot of the pattern together with the
+        best-fit model.
         """
         if hasattr(self.spectrum, "path"):
             filename = self.spectrum.path.split("/")[-1] + "_"
