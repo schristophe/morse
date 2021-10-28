@@ -66,11 +66,14 @@ def in2co(Pin, m, k, nurot, folded=False, ed=False):
     s = 2 * np.abs(Pco) * nurot  # obs. spin parameter
     # print(s)
     if k + abs(m) > 0:
-        index_keep = np.where(s <= 20)[0]
+        if m >= 0:
+            index_keep = np.where(s < 100)[0]
+        else:
+            index_keep = np.where(s < 20)[0]
     elif k == -2 and m == 1:
-        index_keep = np.where((s <= 100) & (s >= -k * (-k - 1) + 0.05))[0]
+        index_keep = np.where((s < 100) & (s >= -k * (-k - 1) + 2e-10))[0]
     else:
-        index_keep = np.where((s <= 19.80) & (s >= -k * (-k - 1) + 0.05))[0]
+        index_keep = np.where((s < 100) & (s >= -k * (-k - 1) + 2e-10))[0]
     Pco = np.abs(Pco)[index_keep]
     #  Checking if there are any modes left.
     if len(index_keep) == 0:

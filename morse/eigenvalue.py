@@ -28,7 +28,10 @@ class Eigenvalue(object):
         self.k = k
         # Loading the tabulated values of Eigenvalue
         if self.k + abs(self.m) > 0:
-            file_rel_path = f"lambda/lambda_m{self.m}.txt"
+            if self.m <= 0:
+                file_rel_path = f"lambda/lambda_m{self.m}_gyre.txt"
+            else:
+                file_rel_path = f"lambda/lambda_m{self.m}.txt"
             if pkg_resources.resource_exists("morse", file_rel_path):
                 file_abs_path = pkg_resources.resource_filename("morse", file_rel_path)
                 data = np.genfromtxt(file_abs_path)
@@ -56,4 +59,4 @@ class Eigenvalue(object):
             self.eta = data[:, 0]
             self.lamb = data[:, 1]
         else:
-            sys.exit("Radial modes are not handled.")
+            sys.exit("Radial modes are not g modes.")
