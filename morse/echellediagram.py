@@ -16,7 +16,7 @@ class EchelleDiagram(object):
         m (int): Azimuthal order.
         k (int): Ordering index (Lee & Saio 97).
         nurot (float): Rotation frequency (in µHz).
-        buoyancy_radius (float): Buoyancy radius (in s).
+        buoy_r (float): Buoyancy radius (in s).
         folded (bool):
             If True, it is assumed that the spectrum is folded in the inertial
             frame.
@@ -29,7 +29,7 @@ class EchelleDiagram(object):
 
     """
 
-    def __init__(self, spectrum, m, k, nurot, buoyancy_radius, folded=False):
+    def __init__(self, spectrum, m, k, nurot, buoy_r, folded=False):
         """Initialises an instance of EchelleDiagram.
 
         The periods are stretched using the parameters (m, k, nurot).
@@ -39,7 +39,7 @@ class EchelleDiagram(object):
             m (int): Azimuthal order.
             k (int): Ordering index (Lee & Saio 97).
             nurot (float): Rotation frequency (in µHz).
-            buoyancy_radius (float): Buoyancy radius (in s).
+            buoy_r (float): Buoyancy radius (in s).
             folded (bool):
                 If True, it is assumed that the spectrum is folded in the
                 inertial frame.
@@ -49,14 +49,14 @@ class EchelleDiagram(object):
         self.m = m
         self.k = k
         self.nurot = nurot
-        self.buoyancy_radius = buoyancy_radius
+        self.buoy_r = buoy_r
         self.folded = folded
         eigenvalue = Eigenvalue(m, k)
         periods_co, self.index_keep = in2co(
             spectrum.periods, m, k, nurot / FACTOR_ROT, folded, ed=True
         )  # moving to the co-rotating frame of reference
         stretched_periods = stretch(m, k, periods_co, eigenvalue, nurot / FACTOR_ROT)
-        self.stretched_periods_mod = np.mod(stretched_periods, buoyancy_radius / 86400)
+        self.stretched_periods_mod = np.mod(stretched_periods, buoy_r / 86400)
 
     def plot(self, save=False):
         """Plots the echelle diagram.
@@ -78,7 +78,7 @@ class EchelleDiagram(object):
                 s=pointsize_ed,
             )
             plt.scatter(
-                86400 * self.stretched_periods_mod + self.buoyancy_radius,
+                86400 * self.stretched_periods_mod + self.buoy_r,
                 self.spectrum.freqs[self.index_keep],
                 s=pointsize_ed,
             )
@@ -87,15 +87,15 @@ class EchelleDiagram(object):
                 86400 * self.stretched_periods_mod, self.spectrum.freqs[self.index_keep]
             )
             plt.scatter(
-                86400 * self.stretched_periods_mod + self.buoyancy_radius,
+                86400 * self.stretched_periods_mod + self.buoy_r,
                 self.spectrum.freqs[self.index_keep],
             )
         plt.xlabel(
             r"$\sqrt{\lambda_{k,m}}P_{\rm co}$ mod $P_0 = $"
-            + ("%.0f" % (self.buoyancy_radius))
+            + ("%.0f" % (self.buoy_r))
             + " $s$"
         )
-        plt.xlim([0, 2.01 * self.buoyancy_radius])
+        plt.xlim([0, 2.01 * self.buoy_r])
         plt.ylabel(r"$\nu_{\rm in}$ $(\mu Hz)$")
         if save == True:
             if hasattr(self.spectrum, "path"):

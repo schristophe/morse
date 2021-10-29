@@ -32,7 +32,7 @@ class IDMap(object):
         nurot (float):
             Rotation frequency corresponding to the maximum of PSD in dft_map
             (in µHz).
-        buoyancy_radius (float):
+        buoy_r (float):
             Buoyancy radius corresponding to the maximum of PSD in dft_map
             (in s).
         psd_threshold (float):
@@ -41,9 +41,9 @@ class IDMap(object):
             True if a period spacing pattern has been detected (psd_max >
             psd_threshold).
         echelle_diagram (EchelleDiagram):
-            Echelle diagram made using the parameters (nurot, buoyancy_radius)
+            Echelle diagram made using the parameters (nurot, buoy_r)
             that maximise the PSD.
-        tolerance (float):
+        tol (float):
             Maximum relative period difference tolerated to associate an
             observed mode to one of the TAR model.
         offset (float): Offset.
@@ -52,11 +52,11 @@ class IDMap(object):
             modes.
         results_mc (np.array):
             Results of the MC simulation. A line contains nurot,
-            buoyancy_radius, psd_max and flag_detection for a draw of the
+            buoy_r, psd_max and flag_detection for a draw of the
             perturbed spectrum.
         err_nurot (float):
             Standard deviation of the perturbed rotation frequencies (in µHz).
-        err_buoyancy_radius (float):
+        err_buoy_r (float):
             Standard deviation of the perturbed buoyancy radii (in s).
     """
 
@@ -99,7 +99,7 @@ class IDMap(object):
                     np.max(stretched_periods) - np.min(stretched_periods)
                 )
                 # Compute the DFT of the stretched spectrum
-                dft_map[i, :] = dft(
+                dft_map[i, :] = _dft(
                     stretched_periods, f0_vect / FACTOR_ROT
                 )  # f0_vect has to be in c/d
         self.resolution = resolution * FACTOR_ROT
@@ -108,7 +108,7 @@ class IDMap(object):
         self.psd_max = np.nanmax(self.dft_map)
         imax_nurot, imax_f0 = np.argwhere(self.dft_map == self.psd_max)[0]
         self.nurot = self.nurot_vect[imax_nurot]
-        self.buoyancy_radius = (
+        self.buoy_r = (
             1e6 / f0_vect[imax_f0]
         )  # we want the buoyancy radius (dim of a time)
         # Computing the detection threshold
@@ -132,7 +132,7 @@ class IDMap(object):
             self.m,
             self.k,
             self.nurot,
-            self.buoyancy_radius,
+            self.buoy_r,
             folded=self.folded,
         )
 
@@ -153,12 +153,12 @@ class IDMap(object):
                 self.m,
                 self.k,
                 self.nurot,
-                self.buoyancy_radius,
+                self.buoy_r,
                 self.folded,
                 tol,
             )
 
-    def get_param_uncertainties(self, ndraws=500, propagate=False, tolerance=5e-3):
+    def calc_uncertainties(self, ndraws=500, propagate=False, tol=5e-3):
         """Estimates the uncertainty on the rotation frequency and buoyancy
         radius using a Monte-Carlo simulation.
 
@@ -168,7 +168,7 @@ class IDMap(object):
                 If True, propagates uncertainties on mode periods. Otherwise,
                 the mean period difference between a TAR model and observed
                 modes is used as a "fictive" uncertainty.
-            tolerance (float):
+            tol (float):
                 Only used if propagate is False. Maximum relative period
                 difference tolerated to associate an observed mode to one of the
                 TAR model.
@@ -178,29 +178,29 @@ class IDMap(object):
         ):  # propagate errors on mode periods
             period_errs = self.spectrum.errs / self.spectrum.errs ** 2
         else:  # or the mean difference between TAR model and observed modes
-            self.tolerance = tolerance
+            self.tol = tol
             # Get the mean offset
             nurot = self.nurot / FACTOR_ROT  # µHz -> c/d
-            buoyancy_radius = self.buoyancy_radius / 86400.0  # s -> d
+            buoy_r = self.buoy_r / 86400.0  # s -> d
             self.offset = get_offset(
                 self.spectrum,
                 self.m,
                 self.k,
                 nurot,
-                buoyancy_radius,
+                buoy_r,
                 folded=self.folded,
             )
             # Generate a synthetic spectrum within the asymptotic TAR
             synth_spectrum = Spectrum()
             synth_spectrum.generate(
-                self.m, self.k, self.nurot, self.buoyancy_radius, offset=self.offset
+                self.m, self.k, self.nurot, self.buoy_r, offset=self.offset
             )
             # Filter synthetic modes that are not in spectrum
             filt_synth_spectrum = synth_spectrum.filter(
-                periodmin=(1 - 5 * tolerance) * min(self.spectrum.periods),
-                periodmax=(1 + 5 * tolerance) * max(self.spectrum.periods),
+                periodmin=(1 - 5 * tol) * min(self.spectrum.periods),
+                periodmax=(1 + 5 * tol) * max(self.spectrum.periods),
             )
-            # For each observed mode, associate the nearest synthetic mode if the period difference is inferior to tolerance
+            # For each observed mode, associate the nearest synthetic mode if the period difference is inferior to tol
             synth_periods = np.array([])
             matched_obs_periods = np.array([])
             filter_obs_spectrum = np.array([])
@@ -214,7 +214,7 @@ class IDMap(object):
                         - self.spectrum.periods[i]
                     )
                     / self.spectrum.periods[i]
-                    <= tolerance
+                    <= tol
                 ):
                     synth_periods = np.append(
                         synth_periods, filt_synth_spectrum.periods[i_closest]
@@ -264,14 +264,14 @@ class IDMap(object):
             results[i, :] = np.array(
                 [
                     perturbed_idmap.nurot,
-                    perturbed_idmap.buoyancy_radius,
+                    perturbed_idmap.buoy_r,
                     perturbed_idmap.psd_max,
                     perturbed_idmap.flag_detection,
                 ]
             )
         self.results_mc = results
         self.err_nurot = np.std(results[:, 0])
-        self.err_buoyancy_radius = np.std(results[:, 1])
+        self.err_buoy_r = np.std(results[:, 1])
 
     def plot(self, cmap="cividis", save=False):
         """Plots the computed DFT map.
@@ -360,8 +360,8 @@ class IDMap(object):
                     + f"{'k':10s}\t{self.k:10d}\n"
                     + f"{'nurot':10s}\t{self.nurot:10.4f}\n".format("nurot", self.nurot)
                     + f"{'err_nurot':10s}\t{self.err_nurot:10.4f}\n"
-                    + f"{'P0':10s}\t{self.buoyancy_radius:10.4f}\n"
-                    + f"{'err_P0':10s}\t{self.err_buoyancy_radius:10.4f}\n"
+                    + f"{'P0':10s}\t{self.buoy_r:10.4f}\n"
+                    + f"{'err_P0':10s}\t{self.err_buoy_r:10.4f}\n"
                     + f"{'max_PSD':10s}\t{self.psd_max:10.2f}\n"
                 )
             else:
@@ -421,7 +421,7 @@ class IDMap(object):
                     "\n# IDMAP MC SIMULATION\n"
                     + "propagate = model_err\n"
                     + f"ndraws = {len(self.results_mc):d}\n"
-                    + f"tolerance = {self.tolerance:8g}\n"
+                    + f"tol = {self.tol:8g}\n"
                     + f"offset = {self.offset:8g}\n"
                 )
             elif hasattr(self, "err_nurot"):
@@ -441,7 +441,7 @@ class IDMap(object):
 # Auxiliary functions used by IDmap methods
 
 
-def dft(P, f0_vect):
+def _dft(P, f0_vect):
     """Computes the Discrete Fourier Transform (DFT) of the spectrum which
     modes have for periods P and for amplitudes one.
 

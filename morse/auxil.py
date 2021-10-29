@@ -169,7 +169,7 @@ def generate_spectrum(periods, sigma, period_max, sampling_rate):
     return spectrum
 
 
-def get_offset(spectrum, m, k, nurot, buoyancy_radius, folded=False):
+def get_offset(spectrum, m, k, nurot, buoy_r, folded=False):
     """Determines the value of the offset by cross-correlating the stretched
     observed spectrum with the stretched TAR model computed for the parameters
     (m, k, nurot, buoyancy radius).
@@ -179,7 +179,7 @@ def get_offset(spectrum, m, k, nurot, buoyancy_radius, folded=False):
         m (int): Azimuthal order.
         k (int): Ordering index (Lee & Saio 97).
         nurot (float): Rotation frequency (in c/d).
-        buoyancy_radius (float): Buoyancy radius (in d).
+        buoy_r (float): Buoyancy radius (in d).
         folded (bool):
             If True, it is assumed that the spectrum is folded in the
             inertial frame.
@@ -194,7 +194,7 @@ def get_offset(spectrum, m, k, nurot, buoyancy_radius, folded=False):
     # Generate spectrum model
     spectrum_model = Spectrum()
     spectrum_model.generate(
-        m, k, nurot * FACTOR_ROT, buoyancy_radius * 86400, offset=0, nmax=110
+        m, k, nurot * FACTOR_ROT, buoy_r * 86400, offset=0, nmax=110
     )
     spectrum_model = spectrum_model.filter(periodmax=np.max(spectrum.periods) + 0.5)
     # Stretch it
@@ -212,11 +212,11 @@ def get_offset(spectrum, m, k, nurot, buoyancy_radius, folded=False):
     # Compute the cross-correlation of the two broaden spectra
     correlation = correlate(obs_broaden, mod_broaden, mode="full")
     lags = correlation_lags(obs_broaden.size, mod_broaden.size, mode="full") / (
-        sampling_rate * buoyancy_radius
+        sampling_rate * buoy_r
     )
 
     # Offset is between 0 and 1 (by definition)
     lag0 = len(lags) // 2
-    lag_P0 = lag0 + int(buoyancy_radius * sampling_rate)
+    lag_P0 = lag0 + int(buoy_r * sampling_rate)
     offset = lags[lag0:lag_P0][np.argmax(correlation[lag0:lag_P0])]
     return offset

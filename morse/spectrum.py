@@ -26,7 +26,7 @@ class Spectrum(object):
         m (int): Azimutal order.
         k (int): Ordering index (Lee & Saio 97).
         nurot (float): Rotation frequency (in µHz).
-        buoyancy_radius (float): Buoyancy radius (in s).
+        buoy_r (float): Buoyancy radius (in s).
         offset (float): Offset.
         n (np.array): Radial orders.
         periods_co (np.array): Periods in the co-rotating frame (in d).
@@ -59,7 +59,7 @@ class Spectrum(object):
         if colamps != -1:
             self.amps = data[:, colamps]
 
-    def generate(self, m, k, nurot, buoyancy_radius, offset=0.0, nmin=1, nmax=90):
+    def generate(self, m, k, nurot, buoy_r, offset=0.0, nmin=1, nmax=90):
         """Generates synthetic frequency data using the asymptotic formulation
         of the traditional approximation of rotation (TAR).
 
@@ -67,7 +67,7 @@ class Spectrum(object):
             m (int): Azimuthal order.
             k (int): Ordering index (Lee & Saio 97).
             nurot (float): Rotation frequency (in µHz).
-            buoyancy_radius (float): Buoyancy radius (in s).
+            buoy_r (float): Buoyancy radius (in s).
             offset (float): Offset.
             nmin (int): Minimum radial order.
             nmax (int): Maximum radial order.
@@ -76,7 +76,7 @@ class Spectrum(object):
         self.m = m
         self.k = k
         self.nurot = nurot
-        self.buoyancy_radius = buoyancy_radius
+        self.buoy_r = buoy_r
         self.offset = offset
         if k + abs(m) > 0:
             n = np.arange(nmin, nmax + 1, 1)
@@ -84,19 +84,19 @@ class Spectrum(object):
             n = np.arange(nmin, nmax + 1, 1)
         self.n = n
         nurot = nurot / FACTOR_ROT  # nurot has to be in c/d
-        buoyancy_radius = buoyancy_radius / 86400.0  # buoyancy_radius in d
+        buoy_r = buoy_r / 86400.0  # buoy_r in d
         if nurot > 0:
             eigenvalue = Eigenvalue(m, k)
             P = eigenvalue.eta / (2 * nurot)
-            f_P_k = buoyancy_radius / np.sqrt(eigenvalue.lamb)
+            f_P_k = buoy_r / np.sqrt(eigenvalue.lamb)
             periods_co = np.array([])
             for i in n:
                 f_P = f_P_k * (i + offset)
-                periods_co = np.append(periods_co, find_zeros(P, f_P - P, 9))
+                periods_co = np.append(periods_co, _find_zeros(P, f_P - P, 9))
         else:
             if k + abs(m) > 0:
                 l = k + abs(m)
-                periods_co = buoyancy_radius * (n + offset) / np.sqrt(l * (l + 1))
+                periods_co = buoy_r * (n + offset) / np.sqrt(l * (l + 1))
             elif k + abs(m) <= 0 and m != 0:
                 sys.exit(
                     "(k = "
@@ -198,7 +198,7 @@ class Spectrum(object):
             filtered_spectrum.periods_co = filtered_spectrum.periods_co[filter]
         return filtered_spectrum
 
-    def clustering(self, eps, min_samples):
+    def cluster(self, eps, min_samples):
         """Automatically detects frequency groups using the scikit-learn
         DBSCAN clustering algorithm.
 
@@ -365,7 +365,7 @@ class Spectrum(object):
             self.periods_co2 = self.periods_co2[i_sorted]
 
 
-def find_zeros(x, y, max_iter):
+def _find_zeros(x, y, max_iter):
     """Finds the zero of a function y(x) by the secant method. Only works for a
     strictly monotonic function.
 

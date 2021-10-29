@@ -25,14 +25,14 @@ class Pattern(object):
             Determined by fitting a TAR model to the observed period spacing pattern.
 
         err_nurot (float): Error on fitted nurot (µHz).
-        buoyancy_radius (float): Buoyancy radius (in s).
+        buoy_r (float): Buoyancy radius (in s).
 
             Determined by fitting a TAR model to the observed period spacing pattern.
 
-        err_buoyancy_radius (float): Error on fitted buoyancy_radius (s).
+        err_buoy_r (float): Error on fitted buoyancy radius (s).
         offset (float): Offset.
 
-            It is assumed that the fitted nurot and buoyancy_radius are exact. Offset
+            It is assumed that the fitted nurot and buoy_r are exact. Offset
             varies widely with slighly different parameters therefore you should not
             attach any physical meaning to it.
 
@@ -63,7 +63,7 @@ class Pattern(object):
         m,
         k,
         nurot,
-        buoyancy_radius,
+        buoy_r,
         folded=False,
         tol=1e-3,
         max_miss=5,
@@ -79,7 +79,7 @@ class Pattern(object):
             m (int): Azimuthal order.
             k (int): Ordering index (Lee & Saio 97).
             nurot (float): Initial guess on the rotation frequency (in µHz).
-            buoyancy_radius (float): Initial guess on the buoyancy_radius (in s).
+            buoy_r (float): Initial guess on the buoyancy radius (in s).
             folded (bool):
                 If True, it is assumed that the spectrum is folded in the
                 inertial frame.
@@ -92,13 +92,13 @@ class Pattern(object):
         self.m = m
         self.k = k
         self.nurot = nurot
-        self.buoyancy_radius = buoyancy_radius
+        self.buoy_r = buoy_r
         self.folded = folded
         self.tol = tol
 
         # Get the mean offset
         self.offset = get_offset(
-            spectrum, m, k, nurot / FACTOR_ROT, buoyancy_radius / 86400, folded
+            spectrum, m, k, nurot / FACTOR_ROT, buoy_r / 86400, folded
         )
         self.fit()
 
@@ -110,9 +110,7 @@ class Pattern(object):
         """
         # Create
         model = Spectrum()
-        model.generate(
-            self.m, self.k, self.nurot, self.buoyancy_radius, offset=self.offset
-        )
+        model.generate(self.m, self.k, self.nurot, self.buoy_r, offset=self.offset)
         matched = self.spectrum.match(model, self.tol)
         matched.sort()
 
@@ -141,7 +139,7 @@ class Pattern(object):
         # Construct the parametric model to feed into curve_fit
         tar_model = _func_tar_model(
             self.nurot,
-            self.buoyancy_radius,
+            self.buoy_r,
             self.offset,
             self.m,
             self.k,
@@ -151,32 +149,30 @@ class Pattern(object):
             tar_model,
             periods_to_fit,
             period_spacings_to_fit,
-            p0=[self.nurot, self.buoyancy_radius],
+            p0=[self.nurot, self.buoy_r],
             bounds=([0, 50], [50, 20000]),
             sigma=covmat,
         )
         # Update parameters
         self.nurot = popt[0]
-        self.buoyancy_radius = popt[1]
+        self.buoy_r = popt[1]
         self.offset = get_offset(
             self.spectrum,
             self.m,
             self.k,
             self.nurot / FACTOR_ROT,
-            self.buoyancy_radius / 86400,
+            self.buoy_r / 86400,
             self.folded,
         )
 
         # Store parameter uncertainties
         pstd = np.sqrt(np.diag(pcov))
         self.err_nurot = pstd[0]
-        self.err_buoyancy_radius = pstd[1]
+        self.err_buoy_r = pstd[1]
 
         # Store best TAR model
         self.model = Spectrum()
-        self.model.generate(
-            self.m, self.k, self.nurot, self.buoyancy_radius, offset=self.offset
-        )
+        self.model.generate(self.m, self.k, self.nurot, self.buoy_r, offset=self.offset)
         self.model.sort()
 
         # Store period spacing pattern data
@@ -229,19 +225,19 @@ class Pattern(object):
 
         # Plot the best TAR model
         tar_model = _func_tar_model(
-            self.nurot, self.buoyancy_radius, self.offset, self.m, self.k
+            self.nurot, self.buoy_r, self.offset, self.m, self.k
         )
         plt.plot(
             self.periods_obs,
             tar_model(
                 self.periods_obs,
                 self.nurot,
-                self.buoyancy_radius,
+                self.buoy_r,
             )
             * 86400,
         )
         # Represent the uncertainties in fitted parameters
-        # Note: nurot and buoyancy_radius are highly correlated, this is probably not
+        # Note: nurot and buoy_r are highly correlated, this is probably not
         # the proper way to do it.
         if self.k == -2 and self.m == 1:
             plt.fill_between(
@@ -249,13 +245,13 @@ class Pattern(object):
                 tar_model(
                     self.periods_obs,
                     self.nurot - self.err_nurot,
-                    self.buoyancy_radius - self.err_buoyancy_radius,
+                    self.buoy_r - self.err_buoy_r,
                 )
                 * 86400,
                 tar_model(
                     self.periods_obs,
                     self.nurot + self.err_nurot,
-                    self.buoyancy_radius + self.err_buoyancy_radius,
+                    self.buoy_r + self.err_buoy_r,
                 )
                 * 86400,
                 alpha=0.3,
@@ -266,13 +262,13 @@ class Pattern(object):
                 tar_model(
                     self.periods_obs,
                     self.nurot + self.err_nurot,
-                    self.buoyancy_radius - self.err_buoyancy_radius,
+                    self.buoy_r - self.err_buoy_r,
                 )
                 * 86400,
                 tar_model(
                     self.periods_obs,
                     self.nurot - self.err_nurot,
-                    self.buoyancy_radius + self.err_buoyancy_radius,
+                    self.buoy_r + self.err_buoy_r,
                 )
                 * 86400,
                 alpha=0.3,
@@ -408,8 +404,8 @@ class Pattern(object):
                 + f"{'k':10s}\t{self.k:10d}\n"
                 + f"{'nurot':10s}\t{self.nurot:10.4f}\n"
                 + f"{'err_nurot':10s}\t{self.err_nurot:10.4f}\n"
-                + f"{'P0':10s}\t{self.buoyancy_radius:10.4f}\n"
-                + f"{'err_P0':10s}\t{self.err_buoyancy_radius:10.4f}\n"
+                + f"{'P0':10s}\t{self.buoy_r:10.4f}\n"
+                + f"{'err_P0':10s}\t{self.err_buoy_r:10.4f}\n"
                 + f"{'offset':10s}\t{self.offset:10.4f}\n"
                 + f"{'nmodes':10s}\t{len(self.n):10d}\n"
                 + f"{'nmin':10s}\t{self.n.min():10d}\n"
@@ -419,21 +415,21 @@ class Pattern(object):
         plt.close("all")
 
 
-def _func_tar_model(nurot, buoyancy_radius, offset, m, k):
+def _func_tar_model(nurot, buoy_r, offset, m, k):
     """Builds and returns a "continuous" function representing the period
     spacings as a function of periods by interpolating a discrete TAR model.
 
     Args:
         nurot (float): Rotation frequency (in µHz).
-        buoyancy_radius (float): Buoyancy radius (in s).
+        buoy_r (float): Buoyancy radius (in s).
         offset (float): Offset.
         m (int): Azimuthal order.
         k (int): Ordering index (Lee & Saio 97).
     """
 
-    def func_temp(periods, nurot, buoyancy_radius):
+    def func_temp(periods, nurot, buoy_r):
         model = Spectrum()
-        model.generate(m, k, nurot, buoyancy_radius, nmax=150)
+        model.generate(m, k, nurot, buoy_r, nmax=150)
         model.sort()
         period_spacings = interp1d(
             model.periods[:-1],
