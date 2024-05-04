@@ -386,3 +386,56 @@ def _find_zeros(x, y, max_iter):
 
     # Root-finding algorithm (secant method)
     return newton(g, x0, tol=1e-14, maxiter=max_iter)
+
+
+def get_offset(spectrum, m, k, nurot, buoy_r, folded=False):
+    """Determines the value of the offset by cross-correlating the stretched
+    observed spectrum with the stretched TAR model computed for the parameters
+    (m, k, nurot, buoyancy radius).
+
+    Args:
+        spectrum (Spectrum):
+        m (int): Azimuthal order.
+        k (int): Ordering index (Lee & Saio 97).
+        nurot (float): Rotation frequency (in c/d).
+        buoy_r (float): Buoyancy radius (in d).
+        folded (bool):
+            If True, it is assumed that the spectrum is folded in the
+            inertial frame.
+
+    Returns:
+        float: Offset (in d).
+    """
+    # Observed spectrum: switch to corotating frame and stretch the spectrum
+    periods_co = in2co(spectrum.periods, m, k, nurot, folded)
+    obs_stretched = stretch(m, k, periods_co, Eigenvalue(m, k), nurot)
+
+    # Generate spectrum model
+    spectrum_model = Spectrum()
+    spectrum_model.generate(
+        m, k, nurot * FACTOR_ROT, buoy_r * 86400, offset=0, nmax=110
+    )
+    spectrum_model = spectrum_model.filter(periodmax=np.max(spectrum.periods) + 0.5)
+    # Stretch it
+    mod_stretched = stretch(m, k, spectrum_model.periods_co, Eigenvalue(m, k), nurot)
+
+    # Artifically broaden peaks in the spectra for the cross-correlation
+    # (because the generated TAR model is not perfectly modelling the observed
+    # periods)
+    period_max = np.max(obs_stretched) + 0.5
+    sigma = 1e-3
+    sampling_rate = 3e4
+    obs_broaden = generate_spectrum(obs_stretched, sigma, period_max, sampling_rate)
+    mod_broaden = generate_spectrum(mod_stretched, sigma, period_max, sampling_rate)
+
+    # Compute the cross-correlation of the two broaden spectra
+    correlation = correlate(obs_broaden, mod_broaden, mode="full")
+    lags = correlation_lags(obs_broaden.size, mod_broaden.size, mode="full") / (
+        sampling_rate * buoy_r
+    )
+
+    # Offset is between 0 and 1 (by definition)
+    lag0 = len(lags) // 2
+    lag_P0 = lag0 + int(buoy_r * sampling_rate)
+    offset = lags[lag0:lag_P0][np.argmax(correlation[lag0:lag_P0])]
+    return offset
