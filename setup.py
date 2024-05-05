@@ -2,8 +2,6 @@ import sys
 
 import setuptools
 
-sys.path.insert(0, "morse")
-
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
@@ -16,9 +14,8 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/schristophe/morse",
-    packages=setuptools.find_packages(),
     include_package_data=True,
-    package_data={"": ["README.md", "LICENSE"], "morse": ["lambda/lambda*.txt"]},
+    package_data={"morse": ["lambda/lambda*.txt"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
