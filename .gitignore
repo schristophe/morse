@@ -2,7 +2,6 @@
 *__pycache__/
 
 # Distribution / packaging
-env/
 build/
 dist/
 *.egg-info/
@@ -13,3 +12,9 @@ docs/build/
 
 # ipython notebooks
 *.ipynb_checkpoints
+
+# Environments
+.env
+.venv
+env/
+venv/
