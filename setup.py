@@ -18,7 +18,7 @@ setuptools.setup(
     url="https://github.com/schristophe/morse",
     packages=setuptools.find_packages(),
     include_package_data=True,
-    package_data={"": ["README.md", "LICENSE", "morse/lambda/lambda*.txt"]},
+    package_data={"": ["README.md", "LICENSE"], "morse": ["lambda/lambda*.txt"]},
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
