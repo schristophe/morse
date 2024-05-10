@@ -1,7 +1,6 @@
 #
 #
 import importlib.resources
-import sys
 
 import numpy as np
 
@@ -38,7 +37,7 @@ class Eigenvalue(object):
                 try:
                     data = np.genfromtxt(file_abs_path)
                 except FileNotFoundError:
-                    sys.exit(
+                    raise FileNotFoundError(
                         f"Tabulated values for lambda(m={self.m},k={self.k}) "
                         + "are not available yet."
                     )
@@ -55,11 +54,11 @@ class Eigenvalue(object):
                 try:
                     data = np.genfromtxt(file_abs_path)
                 except FileNotFoundError:
-                    sys.exit(
+                    raise FileNotFoundError(
                         f"Tabulated values for lambda(m={self.m},k={self.k}) "
                         + "are not available yet."
                     )
             self.eta = data[:, 0]
             self.lamb = data[:, 1]
         else:
-            sys.exit("Radial modes are not g modes.")
+            raise ValueError("Radial modes are not g modes.")
