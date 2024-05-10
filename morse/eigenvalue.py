@@ -1,8 +1,9 @@
 #
 #
-import numpy as np
+import importlib.resources
 import sys
-import pkg_resources
+
+import numpy as np
 
 
 class Eigenvalue(object):
@@ -32,14 +33,15 @@ class Eigenvalue(object):
                 file_rel_path = f"lambda/lambda_m{self.m}_gyre.txt"
             else:
                 file_rel_path = f"lambda/lambda_m{self.m}.txt"
-            if pkg_resources.resource_exists("morse", file_rel_path):
-                file_abs_path = pkg_resources.resource_filename("morse", file_rel_path)
-                data = np.genfromtxt(file_abs_path)
-            else:
-                sys.exit(
-                    f"Tabulated values for lambda(m={self.m},k={self.k}) "
-                    + "are not available yet."
-                )
+            ref = importlib.resources.files("morse") / file_rel_path
+            with importlib.resources.as_file(ref) as file_abs_path:
+                try:
+                    data = np.genfromtxt(file_abs_path)
+                except FileNotFoundError:
+                    sys.exit(
+                        f"Tabulated values for lambda(m={self.m},k={self.k}) "
+                        + "are not available yet."
+                    )
             self.eta = data[:, 0]
             l = self.k + abs(self.m)  # angular degree
             if self.m == 0:
@@ -48,14 +50,15 @@ class Eigenvalue(object):
                 self.lamb = data[:, l - abs(self.m) + 1]
         elif self.k + abs(self.m) <= 0 and self.m != 0:
             file_rel_path = f"lambda/lambda_m{self.m}_k{self.k}_gyre.txt"
-            if pkg_resources.resource_exists("morse", file_rel_path):
-                file_abs_path = pkg_resources.resource_filename("morse", file_rel_path)
-                data = np.genfromtxt(file_abs_path)
-            else:
-                sys.exit(
-                    f"""Tabulated values for lambda(m={self.m},k={self.k})
-                        are not available yet."""
-                )
+            ref = importlib.resources.files("morse") / file_rel_path
+            with importlib.resources.as_file(ref) as file_abs_path:
+                try:
+                    data = np.genfromtxt(file_abs_path)
+                except FileNotFoundError:
+                    sys.exit(
+                        f"Tabulated values for lambda(m={self.m},k={self.k}) "
+                        + "are not available yet."
+                    )
             self.eta = data[:, 0]
             self.lamb = data[:, 1]
         else:
