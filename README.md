@@ -1,4 +1,5 @@
-# The MOde Regularity SEarcher (morse)
+# morse (moved to Codeberg.org)
+
 **A Python package to interpret the oscillation spectrum of γ Doradus and Slowly Pulsating B stars.**
 
 γ Doradus and SPB stars pulsate in low-frequency gravito-inertial modes 
@@ -9,7 +10,7 @@ oscillation spectrum. morse has been primarily designed to deal with moderately
 and fastly rotating pulsators but, to some extent, is also of interest for slowly
 rotating stars.
 
-**Documentation: https://morse-asteroseismo.rtfd.io**
+**Documentation: <https://morse-asteroseismo.rtfd.io>**
 
 
 ## Citations
